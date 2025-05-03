@@ -142,4 +142,17 @@ ${pick(zhOutros)}`;
         {story && (
           <div className="mb-6">
             <div className="text-gray-800 bg-white p-6 rounded-lg shadow-lg whitespace-pre-wrap leading-relaxed">
-              {sto
+              {story}
+            </div>
+            <button
+              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold shadow"
+              onClick={handleSpeak}
+            >
+              朗讀故事
+            </button>
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
