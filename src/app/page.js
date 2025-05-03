@@ -1,103 +1,75 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // 範例故事文字，之後會用 API 或範本動態替換
+  const [story, setStory] = useState(
+    "從前有個勇敢的小朋友，他最喜歡車車和恐龍，還有飛機和娃娃……\n\n(點擊下方按鈕開始朗讀)"
+  );
+  const [voices, setVoices] = useState([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  // 載入並更新語音列表
+  useEffect(() => {
+    const synth = window.speechSynthesis;
+    const updateVoices = () => setVoices(synth.getVoices());
+    synth.onvoiceschanged = updateVoices;
+    updateVoices();
+  }, []);
+
+  // 語音朗讀函式
+  const handleSpeak = (langPrefix, nameHint) => {
+    if (!voices.length) return alert("語音尚未載入，請稍後再試");
+    // 找出對應語系且名稱包含提示字串的女性聲音
+    const voice = voices.find(
+      (v) =>
+        v.lang.startsWith(langPrefix) &&
+        nameHint.some((hint) => v.name.includes(hint))
+    );
+    const utter = new SpeechSynthesisUtterance(story);
+    if (voice) utter.voice = voice;
+    utter.rate = 1;
+    utter.pitch = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  };
+
+  return (
+    <main className="max-w-md mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">親子說故事</h1>
+
+      {/* 故事情節 */}
+      <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded mb-4">
+        {story}
+      </pre>
+
+      {/* 三種語言的朗讀按鈕 */}
+      <div className="flex space-x-2">
+        <button
+          className="flex-1 bg-blue-500 text-white py-2 rounded"
+          onClick={() =>
+            handleSpeak("zh", ["Mei", "Ting", "Yun", "Liang"])
+          }
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          國語朗讀
+        </button>
+        <button
+          className="flex-1 bg-green-500 text-white py-2 rounded"
+          onClick={() =>
+            handleSpeak("zh", ["Heami", "Sin-Ji", "Sin-ji"]) // 常見粵語女聲關鍵字
+          }
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          粵語朗讀
+        </button>
+        <button
+          className="flex-1 bg-purple-500 text-white py-2 rounded"
+          onClick={() =>
+            handleSpeak("en", ["Female", "Samantha", "Victoria"])
+          }
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          English Read
+        </button>
+      </div>
+    </main>
   );
 }
