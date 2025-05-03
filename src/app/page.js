@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// 1. 模块顶层：预设主题与随机函数
-const PRESETS = [
-  "森林探險",
-  "太空冒險",
-  "海底世界",
-  "魔法學院",
-  "恐龍時代",
-];
+const PRESETS = ["森林探險", "太空冒險", "海底世界", "魔法學院", "恐龍時代"];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 export default function Home() {
@@ -17,7 +10,9 @@ export default function Home() {
   const [theme, setTheme] = useState("");
   const [story, setStory] = useState("");
   const [voices, setVoices] = useState([]);
+  const [source, setSource] = useState("local"); // "local" or "youtube"
 
+  // 載入可用的語音列表
   useEffect(() => {
     const synth = window.speechSynthesis;
     const update = () => setVoices(synth.getVoices());
@@ -25,11 +20,11 @@ export default function Home() {
     update();
   }, []);
 
-  const generateStory = () => {
+  // 本地模板生成故事
+  const generateLocalStory = () => {
     if (!name.trim() || !theme.trim()) {
       return alert("請先輸入小朋友名字與主題");
     }
-
     const zhIntros = [
       `今天，我們要來認識一個關於「${theme}」的奇幻故事…`,
       `在「${theme}」的世界裡，住著一位名叫 ${name} 的小朋友…`,
@@ -40,16 +35,41 @@ export default function Home() {
       `${name} 在「${theme}」中找到了勇氣與新朋友。`,
       `這就是「${theme}」的奇妙故事，下次再一起前往新冒險！`,
     ];
-
     const text = `${pick(zhIntros)}
 
 在冒險途中，${name} 遇見了許多驚喜，也學會了分享與勇氣。
 
 ${pick(zhOutros)}`;
-
     setStory(text);
   };
 
+  // 呼叫 YouTube API 生成故事
+  const fetchYTStory = async () => {
+    try {
+      const res = await fetch("/api/yt-generate");
+      const data = await res.json();
+      if (data.story) {
+        setStory(data.story);
+      } else {
+        alert("無法產生 YouTube 故事");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("呼叫 API 失敗");
+    }
+  };
+
+  // 統一的「產生故事」入口
+  const handleGenerate = () => {
+    setStory(""); // 清空舊故事
+    if (source === "youtube") {
+      fetchYTStory();
+    } else {
+      generateLocalStory();
+    }
+  };
+
+  // 朗讀故事
   const handleSpeak = () => {
     if (!story) return alert("請先生成故事內容");
     const voice = voices.find((v) =>
@@ -83,39 +103,44 @@ ${pick(zhOutros)}`;
           </p>
           <button
             className="bg-pink-500 hover:bg-pink-600 px-6 py-3 rounded-full text-white font-semibold shadow-lg"
-            onClick={() => {
+            onClick={() =>
               document
                 .getElementById("story-form")
-                .scrollIntoView({ behavior: "smooth" });
-            }}
+                .scrollIntoView({ behavior: "smooth" })
+            }
           >
             生成故事
           </button>
         </div>
       </section>
 
-      {/* Form & Story */}
+      {/* 表單 */}
       <section id="story-form" className="max-w-xl mx-auto p-6 space-y-6">
-        {/* 主題預設 & 隨機 */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          {PRESETS.map((t) => (
-            <button
-              key={t}
-              className="px-3 py-1 bg-purple-200 hover:bg-purple-300 rounded-full text-sm"
-              onClick={() => setTheme(t)}
-            >
-              {t}
-            </button>
-          ))}
+        {/* 來源切換 */}
+        <div className="flex justify-center gap-4 mb-4">
           <button
-            className="px-3 py-1 bg-green-300 hover:bg-green-400 rounded-full text-sm"
-            onClick={() => setTheme(pick(PRESETS))}
+            className={`px-4 py-2 rounded-full ${
+              source === "local"
+                ? "bg-purple-600 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+            onClick={() => setSource("local")}
           >
-            隨機主題
+            本地模板
+          </button>
+          <button
+            className={`px-4 py-2 rounded-full ${
+              source === "youtube"
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+            onClick={() => setSource("youtube")}
+          >
+            YouTube 隨機
           </button>
         </div>
 
-        {/* 輸入表單 */}
+        {/* 輸入欄位 */}
         <div className="space-y-4">
           <input
             className="w-full p-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-200"
@@ -131,14 +156,27 @@ ${pick(zhOutros)}`;
           />
           <button
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold shadow"
-            onClick={generateStory}
+            onClick={handleGenerate}
           >
             產生故事
           </button>
         </div>
 
-        {/* 故事情節 */}
+        {/* 顯示故事 */}
         {story && (
           <div className="mb-6">
             <div className="text-gray-800 bg-white p-6 rounded-lg shadow-lg whitespace-pre-wrap leading-relaxed">
               {story}
+            </div>
+            <button
+              className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold shadow"
+              onClick={handleSpeak}
+            >
+              朗讀故事
+            </button>
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
