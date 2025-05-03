@@ -2,28 +2,37 @@
 import { NextResponse } from "next/server";
 import { getSubtitles } from "youtube-captions-scraper";
 
-// 你測試可用的影片 ID，之後換成你選的親子故事影片
-const VIDEO_IDS = ["6SGpCNF9cxQ"];
+// 若未輸入連結，隨機選用這些影片 ID
+const FALLBACK_IDS = ["Ks-_Mh1QhMc", "lTTvZqVvA0I"];
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-export async function GET() {
-  const videoId = pick(VIDEO_IDS);
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  let videoId = searchParams.get("videoId");
+
+  // 若使用者貼了 YouTube 連結，解析 videoId
+  if (videoId) {
+    const m = videoId.match(/(?:v=|youtu\.be\/|\/embed\/)([A-Za-z0-9_-]{11})/);
+    videoId = m ? m[1] : videoId;
+  } else {
+    videoId = pick(FALLBACK_IDS);
+  }
 
   let captions;
   try {
+    // 先嘗試繁中字幕
     captions = await getSubtitles({ videoID: videoId, lang: "zh-TW" });
   } catch {
-    // 繁中沒字幕就改抓英文
+    // 繁中失敗就抓英文
     captions = await getSubtitles({ videoID: videoId, lang: "en" });
   }
 
-  if (!captions?.length) {
-    console.error("完全找不到字幕 for", videoId);
-    return NextResponse.json({ error: "無法生成故事" }, { status: 500 });
+  if (!captions.length) {
+    return NextResponse.json({ error: "無法取得字幕" }, { status: 500 });
   }
 
-  // 隨機拼接大約 600 字
+  // 隨機拼接約 600 字
   let story = "";
   const segs = [...captions];
   while (story.length < 600 && segs.length) {
