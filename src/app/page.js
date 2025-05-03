@@ -1,8 +1,8 @@
 "use client";
+
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [lang, setLang] = useState("zh");
   const [name, setName] = useState("");
   const [theme, setTheme] = useState("");
   const [story, setStory] = useState("");
@@ -23,10 +23,12 @@ export default function Home() {
     update();
   }, []);
 
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
   const generateStory = () => {
-    if (!name || !theme) return alert("請先輸入名字與主題");
+    if (!name.trim() || !theme.trim()) {
+      return alert("請先輸入小朋友名字與主題");
+    }
 
     const zhIntros = [
       `今天，我們要來認識一個關於「${theme}」的奇幻故事…`,
@@ -34,43 +36,24 @@ export default function Home() {
       `有一天，${name} 跟著我踏入了「${theme}」的秘密之門…`,
     ];
     const zhOutros = [
-      `在「${theme}」的旅程結束後，${name} 帶著滿滿回憶回家了。`,
-      `${name} 在「${theme}」中找到了新的朋友與勇氣。`,
-      `這就是「${theme}」的奇妙故事，期待下一次冒險。`,
+      `結束了「${theme}」的冒險後，${name} 帶著滿滿回憶回家了。`,
+      `${name} 在「${theme}」中找到了勇氣與新朋友。`,
+      `這就是「${theme}」的奇妙故事，下次再一起前往新冒險！`,
     ];
 
-    const enIntros = [
-      `Today, we embark on a wondrous tale about "${theme}".`,
-      `In the world of "${theme}", there lived a curious child named ${name}.`,
-      `One day, ${name} stepped through the secret door to the "${theme}" land…`,
-    ];
-    const enOutros = [
-      `After the "${theme}" adventure, ${name} returned home with a heart full of memories.`,
-      `${name} found new friends and courage in the world of "${theme}".`,
-      `That’s the end of our "${theme}" story. Until the next adventure!`,
-    ];
+    const text = `${pick(zhIntros)}
 
-    const text = lang === "zh"
-      ? `${pick(zhIntros)}
+在冒險途中，${name} 遇見了許多驚喜，也學會了分享與勇氣。
 
-在冒險過程中，${name} 遇見了許多驚喜，也學會了分享與勇敢。
-
-${pick(zhOutros)}`
-      : `${pick(enIntros)}
-
-Along the way, ${name} encountered many surprises and learned about sharing and courage.
-
-${pick(enOutros)}`;
+${pick(zhOutros)}`;
 
     setStory(text);
   };
 
   const handleSpeak = () => {
     if (!story) return alert("請先生成故事內容");
-    const prefix = lang === "zh" ? "zh" : "en";
-    const voice = voices.find(v =>
-      v.lang.startsWith(prefix) &&
-      /Female|Mei|Ting|Samantha|Victoria/.test(v.name)
+    const voice = voices.find((v) =>
+      v.lang.startsWith("zh") && /Female|Mei|Ting/.test(v.name)
     );
     const ut = new SpeechSynthesisUtterance(story);
     if (voice) ut.voice = voice;
@@ -80,80 +63,68 @@ ${pick(enOutros)}`;
   };
 
   return (
-    <main className="max-w-md mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-bold">親子說故事</h1>
+    <main className="max-w-xl mx-auto p-6 bg-gradient-to-b from-purple-50 to-white min-h-screen">
+      <h1 className="text-4xl font-extrabold text-purple-700 text-center mb-6">
+        親子說故事
+      </h1>
 
-      {/* 1. 主題預設 & 隨機 */}
-      <div className="flex flex-wrap gap-2">
-        {PRESETS.map(t => (
+      {/* 主題預設 & 隨機 */}
+      <div className="flex flex-wrap gap-2 justify-center mb-4">
+        {PRESETS.map((t) => (
           <button
             key={t}
-            className="px-3 py-1 bg-gray-200 rounded"
+            className="px-4 py-2 bg-purple-200 hover:bg-purple-300 rounded-full text-sm"
             onClick={() => setTheme(t)}
           >
             {t}
           </button>
         ))}
         <button
-          className="px-3 py-1 bg-green-300 rounded"
+          className="px-4 py-2 bg-green-300 hover:bg-green-400 rounded-full text-sm"
           onClick={() => setTheme(pick(PRESETS))}
         >
           隨機主題
         </button>
       </div>
 
-      {/* 2. 語言切換 */}
-      <div className="flex space-x-2">
-        <button
-          className={`flex-1 py-2 rounded ${lang === "zh" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-          onClick={() => setLang("zh")}
-        >
-          中文
-        </button>
-        <button
-          className={`flex-1 py-2 rounded ${lang === "en" ? "bg-purple-500 text-white" : "bg-gray-200"}`}
-          onClick={() => setLang("en")}
-        >
-          English
-        </button>
-      </div>
-
-      {/* 3. 表單：名字 + 主題 */}
-      <div className="space-y-2">
+      {/* 表單：名字 + 主題 */}
+      <div className="space-y-3 mb-6">
         <input
-          className="w-full p-2 border rounded"
-          placeholder={lang === "zh" ? "小朋友名字" : "Child's Name"}
+          className="w-full p-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-200"
+          placeholder="小朋友名字"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
         />
         <input
-          className="w-full p-2 border rounded"
-          placeholder={lang === "zh" ? "主題" : "Theme"}
+          className="w-full p-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-200"
+          placeholder="主題"
           value={theme}
-          onChange={e => setTheme(e.target.value)}
+          onChange={(e) => setTheme(e.target.value)}
         />
         <button
-          className="w-full bg-indigo-500 text-white p-2 rounded"
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold shadow"
           onClick={generateStory}
         >
-          {lang === "zh" ? "產生故事" : "Generate Story"}
+          產生故事
         </button>
       </div>
 
-      {/* 4. 故事情節 */}
+      {/* 故事情節 */}
       {story && (
-        <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded">
-          {story}
-        </pre>
+        <div className="mb-6">
+          <div className="text-gray-800 bg-white p-6 rounded-lg shadow-lg whitespace-pre-wrap leading-relaxed">
+            {story}
+          </div>
+        </div>
       )}
 
-      {/* 5. 朗讀 */}
+      {/* 朗讀按鈕 */}
       {story && (
         <button
-          className="w-full bg-green-500 text-white p-2 rounded"
+          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold shadow"
           onClick={handleSpeak}
         >
-          {lang === "zh" ? "朗讀故事" : "Read Aloud"}
+          朗讀故事
         </button>
       )}
     </main>
