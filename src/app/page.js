@@ -8,17 +8,19 @@ export default function Home() {
   const [story, setStory] = useState("");
   const [voices, setVoices] = useState([]);
   const [isPaused, setIsPaused] = useState(false);
-  const synthRef = useRef(window.speechSynthesis);
+  const synthRef = useRef(null);
 
-  // 載入語音列表
+  // 客户端挂载后才初始化 window.speechSynthesis 与语音列表
   useEffect(() => {
     const synth = window.speechSynthesis;
-    const update = () => setVoices(synth.getVoices());
-    synth.onvoiceschanged = update;
-    update();
+    synthRef.current = synth;
+
+    const updateVoices = () => setVoices(synth.getVoices());
+    synth.onvoiceschanged = updateVoices;
+    updateVoices();
   }, []);
 
-  // 產生故事
+  // 生成故事
   const fetchYTStory = async () => {
     if (!link.trim()) {
       alert("請輸入 YouTube 連結");
@@ -49,14 +51,13 @@ export default function Home() {
     const synth = synthRef.current;
     const available = voices.length ? voices : synth.getVoices();
 
-    // 優先選輕柔女性中文聲
     const preferred = available.find((v) =>
       v.lang.startsWith("zh") &&
       /Mei|Ting|Liang|Yating|Yue|Sin-ji|female/i.test(v.name)
     );
-    const fallback = available.find((v) => v.lang.startsWith("zh")) || available[0];
+    const fallback =
+      available.find((v) => v.lang.startsWith("zh")) || available[0];
 
-    // 拆分句子，保留標點
     const segments = story
       .split(/([。！？\?])/)
       .map((s) => s.trim())
@@ -82,7 +83,7 @@ export default function Home() {
   // 暫停/繼續
   const togglePause = () => {
     const synth = synthRef.current;
-    if (synth.speaking) {
+    if (synth && synth.speaking) {
       if (isPaused) {
         synth.resume();
         setIsPaused(false);
@@ -95,7 +96,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">YouTube 隨機故事</h1>
+      <h1 className="text-3xl font-bold text-center mb-6">
+        YouTube 隨機故事
+      </h1>
       <div className="max-w-xl mx-auto space-y-4">
         <input
           className="w-full p-3 border rounded-lg"
