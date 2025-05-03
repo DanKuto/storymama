@@ -10,33 +10,35 @@ export default function Home() {
   const [isPaused, setIsPaused] = useState(false);
   const synthRef = useRef(null);
 
-  // 客户端挂载后才初始化 window.speechSynthesis 与语音列表
+  // 客户端挂载后初始化 speechSynthesis 和语音列表
   useEffect(() => {
     const synth = window.speechSynthesis;
     synthRef.current = synth;
-
-    const updateVoices = () => setVoices(synth.getVoices());
-    synth.onvoiceschanged = updateVoices;
-    updateVoices();
+    const update = () => setVoices(synth.getVoices());
+    synth.onvoiceschanged = update;
+    update();
   }, []);
 
-  // 生成故事
+  // 生成故事（YouTube）
   const fetchYTStory = async () => {
     if (!link.trim()) {
       alert("請輸入 YouTube 連結");
       return;
     }
     setStory("");
-    const url = new URL(window.location.href);
-    url.pathname = "/api/yt-generate";
-    url.searchParams.set("videoId", link.trim());
-
     try {
-      const res = await fetch(url.toString());
+      const res = await fetch(
+        `/api/yt-generate?videoId=${encodeURIComponent(link.trim())}`
+      );
       const data = await res.json();
-      if (data.story) setStory(data.story);
-      else alert("生成失敗");
-    } catch {
+      if (res.ok && data.story) {
+        setStory(data.story);
+      } else {
+        console.error("API 回傳錯誤：", data);
+        alert("生成失敗");
+      }
+    } catch (err) {
+      console.error("fetchYTStory 錯誤：", err);
       alert("呼叫 API 失敗");
     }
   };
@@ -47,22 +49,17 @@ export default function Home() {
       alert("請先生成故事");
       return;
     }
-
     const synth = synthRef.current;
     const available = voices.length ? voices : synth.getVoices();
-
     const preferred = available.find((v) =>
       v.lang.startsWith("zh") &&
       /Mei|Ting|Liang|Yating|Yue|Sin-ji|female/i.test(v.name)
     );
-    const fallback =
-      available.find((v) => v.lang.startsWith("zh")) || available[0];
-
+    const fallback = available.find((v) => v.lang.startsWith("zh")) || available[0];
     const segments = story
       .split(/([。！？\?])/)
       .map((s) => s.trim())
       .filter((s) => s);
-
     const speakSegment = (idx) => {
       if (idx >= segments.length) return;
       const u = new SpeechSynthesisUtterance(segments[idx]);
@@ -74,13 +71,12 @@ export default function Home() {
       };
       synth.speak(u);
     };
-
     synth.cancel();
     setIsPaused(false);
     speakSegment(0);
   };
 
-  // 暫停/繼續
+  // 暫停/繼續播放
   const togglePause = () => {
     const synth = synthRef.current;
     if (synth && synth.speaking) {
@@ -96,9 +92,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">
-        YouTube 隨機故事
-      </h1>
+      <h1 className="text-3xl font-bold text-center mb-6">YouTube 隨機故事</h1>
       <div className="max-w-xl mx-auto space-y-4">
         <input
           className="w-full p-3 border rounded-lg"
